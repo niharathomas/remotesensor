@@ -7,7 +7,7 @@ from datetime import datetime
 
 from remotesensor.database import MongoDBWriter
 from remotesensor.sensors import Sensor
-
+import time
 
 class SensorManagement(MongoDBWriter):
     def __init__(self, dbname='sensors', collectionname='sensors', hostname='localhost'):
@@ -32,8 +32,10 @@ class SensorManagement(MongoDBWriter):
             
     def findByCustomer(self, customerId):
         table = self.client[self._dbname][self._collectionname]
+        rows = []
         for row in table.find({"customerId":customerId}).sort("dt" ): 
-            print row
+            rows.append(row)
+        return rows
         
 class SensorReadingWriter(MongoDBWriter):
     
@@ -55,8 +57,10 @@ class SensorReadingWriter(MongoDBWriter):
         table = self.client[self._dbname][self._collectionname]
         docs = []
         for row in table.find({"sensorid":sensorid}).sort("createdTime" ).limit(100): 
-            row['createdTime'] = row['createdTime'].strftime('%Y-%m-%dT%H:%M:%SZ')
+            row['createdTime'] = time.mktime(row['createdTime'].timetuple()) 
+            #.strftime('%Y-%m-%dT%H:%M:%SZ')
             row['_id'] =  str(row['_id'])
+            row['temperature'] = (row['temperature'] / 10000) * (9.0/5.0) + 32.0
             docs.append(row)
         return docs
 
@@ -76,7 +80,6 @@ if __name__ == '__main__':
     #sw.saveToDb(records)
     #sw.findAll()
     sw.findBySensor(1231)
-    '''
     s = Sensor()
     s.id = 11112
     s.customerId = 22222
@@ -91,4 +94,6 @@ if __name__ == '__main__':
     #sm.findByCustomer(22222)
     srw = SensorReadingWriter(hostname='54.85.111.126')
     #srw.saveReading(11112, 88.22 )
-    print srw.findBySensor(123122)
+    print srw.findBySensor(1000)
+    '''
+    pass
